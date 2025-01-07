@@ -9,6 +9,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useSession } from 'next-auth/react';
+import { toast } from "@/hooks/use-toast";
 
 interface GoogleUser {
   id?: string;
@@ -36,6 +38,7 @@ const CompleteProfileDialog: React.FC<CompleteProfileDialogProps> = ({
   googleUser, 
   onProfileComplete 
 }) => {
+  const { update: updateSession } = useSession();
   const [formData, setFormData] = useState<FormData>({
     firstName: googleUser?.name?.split(' ')[0] || '',
     lastName: googleUser?.name?.split(' ').slice(1).join(' ') || '',
@@ -88,7 +91,29 @@ const CompleteProfileDialog: React.FC<CompleteProfileDialogProps> = ({
         throw new Error(data.message || 'Error creating profile');
       }
 
-      onProfileComplete(data);
+      // First update the session with new user data
+      await updateSession({
+        user: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          role: formData.role,
+          email: formData.email,
+        }
+      });
+
+      // Then notify parent component
+      onProfileComplete({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: formData.role
+      });
+
+      toast({
+        title: "Success",
+        description: "Account details updated! Please login back to see the changes",
+        variant: "default",
+        className: 'bg-green-100 border-green-300 text-white-700'
+      });
+
     } catch (err: any) {
       setError(err.message || 'An error occurred while creating your profile');
     } finally {

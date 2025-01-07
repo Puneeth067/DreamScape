@@ -8,9 +8,10 @@ import Head from 'next/head';
 import { DashNav } from "@/components/DashNav";
 import { DashFooter } from "@/components/DashFooter";
 import CompleteProfileDialog from '@/components/CompleteProfileDialog';
+import { Toaster } from "@/components/ui/toaster";
 
 export default function Dashboard() {
-  const { data: session, status, update } = useSession({
+  const { data: session, status, update: updateSession } = useSession({
     required: true,
     onUnauthenticated() {
       redirect('/signin');
@@ -28,7 +29,6 @@ export default function Dashboard() {
           const res = await fetch(`/api/user/check?email=${session.user.email}`);
           const data = await res.json();
           
-          // Only show dialog for Google users who don't exist in the database
           if (!data.exists && session.user.provider === 'google') {
             setShowProfileDialog(true);
           }
@@ -56,8 +56,9 @@ export default function Dashboard() {
   const handleProfileComplete = async (userData: UserData) => {
     try {
       setShowProfileDialog(false);
-      // Update the session with the new user data
-      await update({
+      
+      // Update the session
+      await updateSession({
         ...session,
         user: {
           ...session?.user,
@@ -65,6 +66,8 @@ export default function Dashboard() {
           name: `${userData.firstName} ${userData.lastName}`
         }
       });
+
+      // Force a router refresh
       router.refresh();
     } catch (error) {
       console.error('Error updating session:', error);
@@ -84,6 +87,7 @@ export default function Dashboard() {
       <Head>
         <title>Dashboard | Dreamscape</title>
       </Head>
+      <Toaster />
       <DashNav />
       
       <Card className="max-w-2xl px-auto mx-auto">
