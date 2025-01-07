@@ -1,23 +1,77 @@
-// src/app/dashboard/page.tsx
-'use client';
-
+"use client"
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { User } from 'lucide-react';
 import Head from 'next/head';
 import { DashNav } from "@/components/DashNav";
-import { Footer } from "@/components/Footer";
+import { DashFooter } from "@/components/DashFooter";
+import CompleteProfileDialog from '@/components/CompleteProfileDialog';
 
 export default function Dashboard() {
-  const { data: session, status } = useSession({
+  const { data: session, status, update } = useSession({
     required: true,
     onUnauthenticated() {
       redirect('/signin');
     },
   });
 
-  if (status === 'loading') {
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUserProfile = async () => {
+      if (session?.user?.email && status === 'authenticated') {
+        try {
+          const res = await fetch(`/api/user/check?email=${session.user.email}`);
+          const data = await res.json();
+          
+          // Only show dialog for Google users who don't exist in the database
+          if (!data.exists && session.user.provider === 'google') {
+            setShowProfileDialog(true);
+          }
+        } catch (error) {
+          console.error('Error checking user profile:', error);
+        } finally {
+          setIsCheckingUser(false);
+        }
+      }
+    };
+
+    if (session?.user && status === 'authenticated') {
+      checkUserProfile();
+    } else if (status !== 'loading') {
+      setIsCheckingUser(false);
+    }
+  }, [session, status]);
+
+  interface UserData {
+    firstName: string;
+    lastName: string;
+    role: string;
+  }
+
+  const handleProfileComplete = async (userData: UserData) => {
+    try {
+      setShowProfileDialog(false);
+      // Update the session with the new user data
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          role: userData.role,
+          name: `${userData.firstName} ${userData.lastName}`
+        }
+      });
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating session:', error);
+    }
+  };
+
+  if (status === 'loading' || isCheckingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-600"></div>
@@ -28,9 +82,10 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Head>
-        <title>Sign In | Dreamscape</title>
+        <title>Dashboard | Dreamscape</title>
       </Head>
       <DashNav />
+      
       <Card className="max-w-2xl px-auto mx-auto">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Dashboard</CardTitle>
@@ -47,15 +102,28 @@ export default function Dashboard() {
                   Welcome, {session.user.name}
                 </h2>
                 <p className="text-gray-600">
-                  Role: {session.user.role}
+                  Role: {session.user.role || 'Not Set'}
                 </p>
               </div>
             </div>
           </CardContent>
         )}
       </Card>
-      <Footer />
+
+      {showProfileDialog && session?.user && (
+        <CompleteProfileDialog
+          isOpen={showProfileDialog}
+          googleUser={{
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email,
+            provider: 'google'
+          }}
+          onProfileComplete={handleProfileComplete}
+        />
+      )}
       
+      <DashFooter />
     </div>
   );
 }

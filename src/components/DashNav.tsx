@@ -1,12 +1,30 @@
-"use client";
-
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import DreamscapeIcon from './DreamscapeIcon';
 
 export const DashNav = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut({ 
+        redirect: true,
+        callbackUrl: '/' 
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback navigation if signOut fails
+      router.push('/');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
@@ -38,12 +56,13 @@ export const DashNav = () => {
 
           {/* Desktop Right Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/" 
-              className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition shadow-md hover:shadow-lg"
+            <button 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition shadow-md hover:shadow-lg disabled:opacity-50"
             >
-              LogOut
-            </Link>
+              {isLoggingOut ? 'Logging out...' : 'Log Out'}
+            </button>
           </div>
 
           {/* Mobile menu button */}
@@ -71,9 +90,13 @@ export const DashNav = () => {
             <Link href="/contact" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
               Contact
             </Link>
-            <Link href="/" className="block px-3 py-2 text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-lg font-medium">
-              LogOut
-            </Link>
+            <button 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full text-left px-3 py-2 text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-lg font-medium disabled:opacity-50"
+            >
+              {isLoggingOut ? 'Logging out...' : 'Log Out'}
+            </button>
           </div>
         </div>
       )}

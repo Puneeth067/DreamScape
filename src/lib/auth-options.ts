@@ -62,14 +62,35 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google') {
+        try {
+          await connectDB();
+          const existingUser = await User.findOne({ email: user.email }) as { _id: string, email: string, role: 'Organizer' | 'Co-organizer' | 'Attendee' };
+          
+          if (!existingUser) {
+            // Don't create the user yet, let the profile completion handle it
+            user.needsProfileCompletion = true;
+          } else {
+            user.role = existingUser.role;
+            user.id = existingUser._id.toString();
+          }
+        } catch (error) {
+          console.error('Error in signIn callback:', error);
+          return false;
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.email = user.email;
-      }
-      if (account) {
-        token.provider = account.provider;
+        token.needsProfileCompletion = user.needsProfileCompletion;
+        if (account) {
+          token.provider = account.provider;
+        }
       }
       return token;
     },
@@ -78,6 +99,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as 'Organizer' | 'Co-organizer' | 'Attendee';
         session.user.email = token.email as string;
+        session.user.provider = token.provider as string;
+        session.user.needsProfileCompletion = token.needsProfileCompletion as boolean;
       }
       return session;
     }

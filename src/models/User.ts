@@ -1,8 +1,6 @@
-// src/models/User.ts
 import mongoose, { Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-// Define the interface for User document
 export interface IUser extends Document {
   firstName: string;
   lastName: string;
@@ -10,10 +8,11 @@ export interface IUser extends Document {
   password?: string;
   role: 'Organizer' | 'Co-organizer' | 'Attendee';
   image?: string;
+  googleId?: string;
+  provider?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-// Define the schema
 const userSchema = new mongoose.Schema<IUser>({
   firstName: {
     type: String,
@@ -34,7 +33,9 @@ const userSchema = new mongoose.Schema<IUser>({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() {
+      return !this.googleId; // Password is only required if not using Google auth
+    },
     minlength: [8, 'Password must be at least 8 characters long'],
   },
   role: {
@@ -46,29 +47,34 @@ const userSchema = new mongoose.Schema<IUser>({
   image: {
     type: String,
   },
+  googleId: {
+    type: String,
+  },
+  provider: {
+    type: String,
+    enum: ['credentials', 'google'],
+  }
 }, {
   timestamps: true,
 });
 
-// Add password hashing middleware
+// Only hash password if it's being modified and exists
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return next();
   }
 
   try {
     const salt = await bcrypt.genSalt(10);
-    if (this.password) {
-      this.password = await bcrypt.hash(this.password, salt);
-    }
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error: any) {
     next(error);
   }
 });
 
-// Add password comparison method
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  if (!this.password) return false;
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -76,8 +82,6 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   }
 };
 
-// Export the model
 export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
 
-// Default export for easier importing
 export default User;
