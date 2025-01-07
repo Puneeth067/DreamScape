@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import DreamscapeIcon from './DreamscapeIcon';
 
-export const Navbar = () => {
+export const DashNav = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -38,14 +38,11 @@ export const Navbar = () => {
 
           {/* Desktop Right Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/signin" className="text-gray-600 hover:text-indigo-600 transition">
-              Sign in
-            </Link>
             <Link 
-              href="/signup" 
+              href="/" 
               className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition shadow-md hover:shadow-lg"
             >
-              Get Started
+              LogOut
             </Link>
           </div>
 
@@ -74,11 +71,8 @@ export const Navbar = () => {
             <Link href="/contact" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
               Contact
             </Link>
-            <Link href="/login" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
-              Sign in
-            </Link>
-            <Link href="/signup" className="block px-3 py-2 text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-lg font-medium">
-              Get Started
+            <Link href="/" className="block px-3 py-2 text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-lg font-medium">
+              LogOut
             </Link>
           </div>
         </div>

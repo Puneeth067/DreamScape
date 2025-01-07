@@ -1,88 +1,53 @@
- 
-import { createContext, useContext, useEffect, useState } from "react";
-import { useRouter } from "next/router";
+'use client';
 
-// Define the shape of the AuthContext
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, usePathname } from 'next/navigation';
+
 interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: any;
 }
 
-// Placeholder for user type
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  isLoading: true,
+  user: null,
+});
 
-// Create the AuthContext
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// AuthContextProvider component
-export const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Example: Check if a user is logged in on initial load
-    const checkUser = async () => {
-      try {
-        // Simulated API call to check user session
-        const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-        setUser(storedUser);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      // Simulated API call
-      const fakeUser = { id: "1", name: "John Doe", email };
-      localStorage.setItem("user", JSON.stringify(fakeUser));
-      setUser(fakeUser);
-      router.push("/dashboard"); // Redirect after login
-    } catch (error) {
-      console.error("Login failed:", error);
-    } finally {
-      setLoading(false);
+    // Check if the current route is public
+    const isPublicRoute = ['/', '/auth/login', '/auth/signup'].includes(pathname);
+    
+    if (status === 'loading') {
+      setIsLoading(true);
+      return;
     }
+
+    setIsLoading(false);
+
+    // Redirect logic
+    if (!session && !isPublicRoute) {
+      router.push('/auth/login');
+    } else if (session && isPublicRoute && pathname !== '/') {
+      router.push('/dashboard');
+    }
+  }, [session, status, pathname, router]);
+
+  const value = {
+    isAuthenticated: !!session,
+    isLoading,
+    user: session?.user,
   };
 
-  const logout = () => {
-    setLoading(true);
-    try {
-      localStorage.removeItem("user");
-      setUser(null);
-      router.push("/"); // Redirect to home after logout
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-// Custom hook to use the AuthContext
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthContextProvider");
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
