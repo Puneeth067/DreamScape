@@ -161,8 +161,8 @@ export default function SignIn() {
               onClick={handleGoogleSignIn}
               disabled={loading}
               className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-              <Image src="/google-icon.png" alt="Google" width={20} height={20} className="w-5 h-5 mr-2" />
               Sign in with Google
+              <Image src="/google-icon.png" alt="Google" width={20} height={20} className="w-5 h-5 mr-2" />
             </button>
           </div>
           
