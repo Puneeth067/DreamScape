@@ -4,8 +4,6 @@ import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DashNav } from "@/components/DashNav";
-import { DashFooter } from "@/components/DashFooter";
 import { Calendar, MapPin, Users, Clock, Edit2, Trash2, Share2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -20,20 +18,26 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface EventDetails {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   datetime: string;
   location: string;
-  eventType: string;
-  organizerId: string;
-  status: string;
-  attendees: Array<{
-    id: string;
+  eventType: 'conference' | 'workshop' | 'meeting' | 'social';
+  organizer: {
+    _id: string;
     name: string;
     email: string;
-    rsvpStatus?: 'attending' | 'maybe' | 'declined';
+  };
+  attendees: Array<{
+    userId: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+    rsvpStatus: 'attending' | 'maybe' | 'declined';
   }>;
+  status: 'upcoming' | 'completed' | 'cancelled';
 }
 
 const EventDetailsPage = () => {
@@ -50,26 +54,48 @@ const EventDetailsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    const transformEventData = (rawEvent: any): EventDetails => {
+      const statusMap: { [key: string]: EventDetails['status'] } = {
+        'draft': 'upcoming',
+        'published': 'upcoming',
+        'cancelled': 'cancelled',
+        'completed': 'completed'
+      };
+    
+      return {
+        ...rawEvent,
+        status: statusMap[rawEvent.status] || 'upcoming'
+      };
+    };
+    
+    // Update the fetch call in useEffect:
     const fetchEventDetails = async () => {
       try {
-        if (!params) throw new Error('Params not found');
-        const response = await fetch(`/api/events/${params.id}`);
-        if (!response.ok) throw new Error('Failed to fetch event details');
+        if (!params || !params.id) {
+          throw new Error('Event ID not found');
+        }
         
+        const response = await fetch(`/api/events/${params.id}`);
         const data = await response.json();
-        setEvent(data);
-        setIsOrganizer(data.organizerId === session?.user?.id);
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch event details');
+        }
+        
+        const transformedEvent = transformEventData(data);
+        setEvent(transformedEvent);
+        setIsOrganizer(transformedEvent.organizer._id === session?.user?.id);
         
         // Find current user's RSVP status
-        const userAttendee = data.attendees.find(
-          (attendee: { id: string }) => attendee.id === session?.user?.id
+        const userAttendee = transformedEvent.attendees.find(
+          (attendee) => attendee.userId._id === session?.user?.id
         );
         setUserRsvpStatus(userAttendee?.rsvpStatus || null);
       } catch (error) {
         console.error('Error fetching event details:', error);
         toast({
           title: "Error",
-          description: "Failed to load event details.",
+          description: error instanceof Error ? error.message : 'Failed to load event details',
           variant: "destructive",
         });
       } finally {
@@ -175,7 +201,6 @@ const EventDetailsPage = () => {
   if (!event) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashNav />
         <div className="container mx-auto px-4 py-8">
           <Card>
             <CardContent className="p-6">
@@ -183,14 +208,12 @@ const EventDetailsPage = () => {
             </CardContent>
           </Card>
         </div>
-        <DashFooter />
       </div>
     );
   }
 
   return (
     <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-cyan-50 min-h-screen">
-      <DashNav />
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-4xl mx-auto border-none bg-white/80 backdrop-blur-sm shadow-lg">
           <CardHeader className="flex flex-row justify-between items-center bg-gradient-to-r from-purple-500 to-pink-500 rounded-t-lg">
@@ -220,7 +243,7 @@ const EventDetailsPage = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => router.push(`/events/${event?.id}/edit`)}
+                    onClick={() => router.push(`/events/${event?._id}/edit`)}
                     title="Edit event"
                     className="text-white hover:bg-white/20"
                   >
@@ -302,13 +325,13 @@ const EventDetailsPage = () => {
               <h3 className="font-semibold text-lg mb-4">Attendees</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {event?.attendees.map((attendee) => (
-                  <div key={attendee.id} className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={attendee.userId?._id || Math.random()} className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center font-medium">
-                      {attendee.name.charAt(0).toUpperCase()}
+                      {attendee.userId?.name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{attendee.name}</p>
-                      <p className="text-sm text-gray-500 truncate">{attendee.email}</p>
+                      <p className="font-medium text-gray-900 truncate">{attendee.userId?.name || 'Unknown'}</p>
+                      <p className="text-sm text-gray-500 truncate">{attendee.userId?.email || 'No email'}</p>
                     </div>
                     {attendee.rsvpStatus && (
                       <span className={`text-xs px-3 py-1 rounded-full font-medium ${
@@ -326,7 +349,6 @@ const EventDetailsPage = () => {
           </CardContent>
         </Card>
       </div>
-      <DashFooter />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

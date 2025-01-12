@@ -210,8 +210,8 @@ export default function SignUp() {
             <button
               onClick={handleGoogleSignUp}
               className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center">
-              Sign in with Google
               <Image src="/google-icon.png" alt="Google" width={20} height={20} className="w-5 h-5 mr-2" />
+              Sign in with Google
             </button>
           </div>
           

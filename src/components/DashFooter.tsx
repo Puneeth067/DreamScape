@@ -4,7 +4,7 @@ import DreamscapeIcon from './DreamscapeIcon';
 
 export const DashFooter = () => {
   return (
-    <footer className="bg-white/80 backdrop-blur-md text-gray-600 border-t border-gray-100 fixed bottom-0 left-0 right-0 shadow-lg">
+    <footer className="bg-white/80 backdrop-blur-md text-gray-600 border-t border-gray-100 bottom-0 left-0 right-0 shadow-lg">
       <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6 py-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center space-x-2">

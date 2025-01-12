@@ -42,14 +42,14 @@ export const DashNav = () => {
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-              <Link href="/features" className="text-gray-600 hover:text-indigo-600 transition">
-                Features
+              <Link href="/dashboard" className="text-gray-600 hover:text-indigo-600 transition">
+                Home
               </Link>
-              <Link href="/about" className="text-gray-600 hover:text-indigo-600 transition">
-                About
+              <Link href="/events" className="text-gray-600 hover:text-indigo-600 transition">
+                View
               </Link>
-              <Link href="/contact" className="text-gray-600 hover:text-indigo-600 transition">
-                Contact
+              <Link href="/events/create" className="text-gray-600 hover:text-indigo-600 transition">
+                Create
               </Link>
             </div>
           </div>

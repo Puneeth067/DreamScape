@@ -3,15 +3,12 @@ import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { DashNav } from "@/components/DashNav";
-import { DashFooter } from "@/components/DashFooter";
 import { useToast } from "@/hooks/use-toast";
 
 interface EventFormData {
   title: string;
   description: string;
-  date: string;
-  time: string;
+  datetime: string;
   location: string;
   eventType: string;
 }
@@ -24,8 +21,7 @@ const CreateEventPage = () => {
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
-    date: '',
-    time: '',
+    datetime: '',
     location: '',
     eventType: 'conference'
   });
@@ -51,9 +47,7 @@ const CreateEventPage = () => {
         },
         body: JSON.stringify({
           ...formData,
-          organizerId: session?.user?.id,
-          datetime: `${formData.date}T${formData.time}`,
-          status: 'upcoming'
+          status: 'published'
         }),
       });
 
@@ -68,7 +62,7 @@ const CreateEventPage = () => {
         description: "Event created successfully.",
       });
 
-      router.push(`/events/${data.id}`);
+      router.push(`/events/${data._id}`);
     } catch (error) {
       console.error('Error creating event:', error);
       toast({
@@ -82,7 +76,7 @@ const CreateEventPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
@@ -115,29 +109,16 @@ const CreateEventPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-violet-500 focus:ring-violet-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Time</label>
-                  <input
-                    type="time"
-                    name="time"
-                    value={formData.time}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-violet-500 focus:ring-violet-500"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Date and Time</label>
+                <input
+                  type="datetime-local"
+                  name="datetime"
+                  value={formData.datetime}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-violet-500 focus:ring-violet-500"
+                  required
+                />
               </div>
 
               <div>
