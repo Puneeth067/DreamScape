@@ -7,6 +7,7 @@ import { Calendar, List, Plus, Filter } from 'lucide-react';
 import Link from 'next/link';
 import EventList from '@/components/EventList';
 import { useToast } from "@/hooks/use-toast";
+import { getEventStatus, updateEventStatus } from '@/utils/eventStatus';
 
 // Type for raw event data from API
 interface RawEvent {
@@ -74,9 +75,15 @@ const EventsPage = () => {
         if (!response.ok) throw new Error('Failed to fetch events');
         const rawData: RawEvent[] = await response.json();
         
-        // Transform the raw event data
-        const transformedEvents = rawData.map(transformEventData);
-        setEvents(transformedEvents);
+        // Update status for each event based on current time
+        const updatedData = await Promise.all(
+          rawData.map(async (event) => {
+            const updatedEvent = await updateEventStatus(event);
+            return transformEventData(updatedEvent);
+          })
+        );
+        
+        setEvents(updatedData);
       } catch (error) {
         console.error('Error fetching events:', error);
         toast({
@@ -88,9 +95,15 @@ const EventsPage = () => {
         setLoading(false);
       }
     };
-
+  
     if (session?.user) {
       fetchEvents();
+      
+      // Set up interval to check event statuses
+      const statusCheckInterval = setInterval(fetchEvents, 60000); // Check every minute
+      
+      // Cleanup interval on component unmount
+      return () => clearInterval(statusCheckInterval);
     }
   }, [session, toast]);
 

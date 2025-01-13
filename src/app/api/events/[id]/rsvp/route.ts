@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/mongodb';
 import { Event } from '@/models/Event';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
+import mongoose from 'mongoose';
 
 export async function POST(
   req: NextRequest,
@@ -18,25 +19,49 @@ export async function POST(
     }
 
     const { status } = await req.json();
+    
+    // Validate status
+    if (!['attending', 'maybe', 'declined'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid RSVP status' },
+        { status: 400 }
+      );
+    }
+
     const event = await Event.findById(params.id);
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Update RSVP status
-    const attendeeIndex = event.attendees.indexOf(session.user.id);
-    if (status === 'attending' && attendeeIndex === -1) {
-      event.attendees.push(session.user.id);
-    } else if (status === 'declined' && attendeeIndex !== -1) {
-      event.attendees.splice(attendeeIndex, 1);
+    // Check if user is already an attendee
+    const existingAttendeeIndex = event.attendees.findIndex(
+      (attendee: any) => attendee.userId.toString() === session.user.id
+    );
+
+    if (existingAttendeeIndex !== -1) {
+      // Update existing RSVP status
+      if (status === 'declined') {
+        // Remove attendee if declining
+        event.attendees.splice(existingAttendeeIndex, 1);
+      } else {
+        // Update RSVP status
+        event.attendees[existingAttendeeIndex].rsvpStatus = status;
+      }
+    } else if (status !== 'declined') {
+      // Add new attendee only if not declining
+      event.attendees.push({
+        userId: new mongoose.Types.ObjectId(session.user.id),
+        rsvpStatus: status
+      });
     }
 
     await event.save();
 
+    // Fetch updated event with populated fields
     const updatedEvent = await Event.findById(params.id)
-      .populate('organizer', 'name email')
-      .populate('attendees', 'name email');
+      .populate('organizer', 'firstName email')
+      .populate('attendees.userId', 'firstName email');
 
     return NextResponse.json(updatedEvent);
   } catch (error: any) {

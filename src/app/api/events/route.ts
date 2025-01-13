@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
     if (organizerId) query.organizer = organizerId;
 
     const events = await Event.find(query)
-      .populate('organizer', 'name email')
-      .populate('attendees.userId', 'name email')
+      .populate('organizer', 'firstName email')
+      .populate('attendees.userId', 'firstName email')
       .sort({ datetime: -1 });
 
     return NextResponse.json(events);
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
     await event.save();
     
     const populatedEvent = await Event.findById(event._id)
-      .populate('organizer', 'name email')
-      .populate('attendees.userId', 'name email');
+      .populate('organizer', 'firstName email')
+      .populate('attendees.userId', 'firstName email');
 
     return NextResponse.json(populatedEvent, { status: 201 });
   } catch (error: unknown) {

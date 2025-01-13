@@ -25,10 +25,10 @@ export async function GET(
     }
 
     const event = await Event.findById(eventId)
-      .populate('organizer', 'name email')
+      .populate('organizer', 'firstName email')
       .populate({
         path: 'attendees.userId',
-        select: 'name email'
+        select: 'firstName email'
       });
 
     if (!event) {

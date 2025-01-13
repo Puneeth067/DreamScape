@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, Clock, Edit2, Trash2, Share2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Edit2, Trash2, Share2, UserPlus } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -26,13 +26,13 @@ interface EventDetails {
   eventType: 'conference' | 'workshop' | 'meeting' | 'social';
   organizer: {
     _id: string;
-    name: string;
+    firstName: string;
     email: string;
   };
   attendees: Array<{
     userId: {
       _id: string;
-      name: string;
+      firstName: string;
       email: string;
     };
     rsvpStatus: 'attending' | 'maybe' | 'declined';
@@ -51,6 +51,7 @@ const EventDetailsPage = () => {
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userRsvpStatus, setUserRsvpStatus] = useState<string | null>(null);
+  const [hasJoined, setHasJoined] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -108,12 +109,58 @@ const EventDetailsPage = () => {
     }
   }, [params, session?.user?.id, toast]);
 
+  
+  const handleJoinEvent = async () => {
+    if (isSubmitting || !params?.id) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/events/${params.id}/rsvp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'attending' }),
+      });
+
+      if (!response.ok) throw new Error('Failed to join event');
+
+      const updatedEvent = await response.json();
+      setEvent(updatedEvent);
+      setHasJoined(true);
+
+      toast({
+        title: "Success!",
+        description: "You've successfully joined the event.",
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to join event. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleRSVP = async (status: 'attending' | 'maybe' | 'declined') => {
     if (isSubmitting) return;
     
     setIsSubmitting(true);
     try {
       if (!params) throw new Error('Params not found');
+      
+      // Check if user is trying to set the same status
+      if (status === userRsvpStatus) {
+        toast({
+          title: "Info",
+          description: "You've already selected this RSVP status.",
+        });
+        return;
+      }
+  
       const response = await fetch(`/api/events/${params.id}/rsvp`, {
         method: 'POST',
         headers: {
@@ -121,16 +168,29 @@ const EventDetailsPage = () => {
         },
         body: JSON.stringify({ status }),
       });
-
+  
       if (!response.ok) throw new Error('Failed to RSVP');
-
+  
       const updatedEvent = await response.json();
       setEvent(updatedEvent);
-      setUserRsvpStatus(status);
-
+      
+      // Update the RSVP status based on the action
+      if (status === 'declined') {
+        setUserRsvpStatus(null);
+      } else {
+        setUserRsvpStatus(status);
+      }
+  
+      // Provide more specific success messages
+      const messages = {
+        attending: "You're now attending this event!",
+        maybe: "Your 'maybe' response has been recorded.",
+        declined: "You've declined this event."
+      };
+  
       toast({
         title: "Success!",
-        description: "Your RSVP has been recorded.",
+        description: messages[status],
       });
     } catch (error) {
       console.error('Error RSVPing to event:', error);
@@ -143,7 +203,7 @@ const EventDetailsPage = () => {
       setIsSubmitting(false);
     }
   };
-
+  
   const handleDelete = async () => {
     setIsSubmitting(true);
     try {
@@ -228,7 +288,20 @@ const EventDetailsPage = () => {
                 {event?.status.charAt(0).toUpperCase() + event?.status.slice(1)}
               </span>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex items-center mt-2 space-x-2">
+                <span className="text-sm text-white">
+                  {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : '+'}
+                </span>
+                {!isOrganizer && !hasJoined && event.status === 'upcoming' && (
+                  <Button
+                    onClick={handleJoinEvent}
+                    disabled={isSubmitting}
+                    className="ml-4 text-white hover:bg-white/20"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    {isSubmitting ? 'Joining...' : 'Join Event'}
+                  </Button>
+                )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -327,10 +400,10 @@ const EventDetailsPage = () => {
                 {event?.attendees.map((attendee) => (
                   <div key={attendee.userId?._id || Math.random()} className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center font-medium">
-                      {attendee.userId?.name?.charAt(0)?.toUpperCase() || '?'}
+                      {attendee.userId?.firstName?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{attendee.userId?.name || 'Unknown'}</p>
+                      <p className="font-medium text-gray-900 truncate">{attendee.userId?.firstName || 'Unknown'}</p>
                       <p className="text-sm text-gray-500 truncate">{attendee.userId?.email || 'No email'}</p>
                     </div>
                     {attendee.rsvpStatus && (
