@@ -1,4 +1,3 @@
-// src/app/events/page.tsx
 "use client"
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -8,13 +7,14 @@ import Link from 'next/link';
 import EventList from '@/components/EventList';
 import { useToast } from "@/hooks/use-toast";
 import { getEventStatus, updateEventStatus } from '@/utils/eventStatus';
+import EventCalendar from '@/components/EventCalendar';
 
-// Type for raw event data from API
 interface RawEvent {
   _id: string;
   title: string;
   datetime: string;
   location: string;
+  eventType: 'conference' | 'workshop' | 'meeting' | 'social';
   attendees: Array<{
     userId: {
       _id: string;
@@ -26,7 +26,6 @@ interface RawEvent {
   status: 'draft' | 'published' | 'cancelled' | 'completed';
 }
 
-// Type for transformed event data
 interface TransformedEvent {
   id: string;
   title: string;
@@ -35,14 +34,18 @@ interface TransformedEvent {
   location: string;
   attendees: number;
   status: 'upcoming' | 'planning' | 'cancelled' | 'completed';
+  eventType: 'conference' | 'workshop' | 'meeting' | 'social';
 }
 
-// Function to transform event data
+interface Filters {
+  status?: string;
+  type?: string;
+  search?: string;
+}
+
 const transformEventData = (event: RawEvent): TransformedEvent => {
   const dateTime = new Date(event.datetime);
-  
-  // Map API status to UI status
-  const statusMap: { [key: string]: TransformedEvent['status'] } = {
+  const statusMap: Record<string, TransformedEvent['status']> = {
     draft: 'planning',
     published: 'upcoming',
     cancelled: 'cancelled',
@@ -56,29 +59,59 @@ const transformEventData = (event: RawEvent): TransformedEvent => {
     time: dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     location: event.location,
     attendees: event.attendees.length,
-    status: statusMap[event.status] || 'upcoming'
+    status: statusMap[event.status] ?? 'upcoming',
+    eventType: event.eventType
   };
 };
 
 const EventsPage = () => {
   const { data: session } = useSession();
   const { toast } = useToast();
-  const [filters, setFilters] = useState({});
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [events, setEvents] = useState<TransformedEvent[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<TransformedEvent[]>([]);
+  const [filters, setFilters] = useState<Filters>({
+    status: '',
+    type: '',
+    search: ''
+  });
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Apply filters to events
+  const applyFilters = (allEvents: TransformedEvent[], currentFilters: Filters) => {
+    return allEvents.filter(event => {
+      const statusMatch = !currentFilters.status || event.status === currentFilters.status;
+      const typeMatch = !currentFilters.type || event.eventType === currentFilters.type;
+      const searchMatch = !currentFilters.search || 
+        event.title.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
+        event.location.toLowerCase().includes(currentFilters.search.toLowerCase());
+      return statusMatch && typeMatch && searchMatch;
+    });
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (newFilters: Filters) => {
+    setFilters(newFilters);
+  };
+
+  // Update filtered events whenever events or filters change
+  useEffect(() => {
+    setFilteredEvents(applyFilters(events, filters));
+  }, [events, filters]);
 
   useEffect(() => {
     const fetchEvents = async () => {
+      if (!session?.user) return;
+
       try {
         const response = await fetch('/api/events');
         if (!response.ok) throw new Error('Failed to fetch events');
         const rawData: RawEvent[] = await response.json();
         
-        // Update status for each event based on current time
         const updatedData = await Promise.all(
           rawData.map(async (event) => {
-            const updatedEvent = await updateEventStatus(event);
+            const updatedEvent = await updateEventStatus(event) as RawEvent;
             return transformEventData(updatedEvent);
           })
         );
@@ -96,15 +129,9 @@ const EventsPage = () => {
       }
     };
   
-    if (session?.user) {
-      fetchEvents();
-      
-      // Set up interval to check event statuses
-      const statusCheckInterval = setInterval(fetchEvents, 60000); // Check every minute
-      
-      // Cleanup interval on component unmount
-      return () => clearInterval(statusCheckInterval);
-    }
+    fetchEvents();
+    const statusCheckInterval = setInterval(fetchEvents, 60000);
+    return () => clearInterval(statusCheckInterval);
   }, [session, toast]);
 
   if (loading) {
@@ -115,10 +142,15 @@ const EventsPage = () => {
     );
   }
 
+  const activeFilterCount = [
+    filters.status,
+    filters.type,
+    filters.search
+  ].filter(Boolean).length;
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Events</h1>
@@ -135,7 +167,6 @@ const EventsPage = () => {
           </div>
         </div>
 
-        {/* View Toggle and Filters */}
         <Card className="mb-6">
           <CardContent className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4">
             <div className="flex items-center space-x-2 mb-4 sm:mb-0">
@@ -156,26 +187,32 @@ const EventsPage = () => {
                 <Calendar className="w-5 h-5" />
               </button>
             </div>
-            <button className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
+            <button 
+              className={`inline-flex items-center px-3 py-2 border rounded-lg ${
+                showFilters ? 'bg-violet-100 text-violet-600 border-violet-200' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <Filter className="w-4 h-4 mr-2" />
               Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-2 px-2 py-0.5 bg-violet-600 text-white text-xs rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
           </CardContent>
         </Card>
 
-        {/* Events List */}
-        {events.length > 0 ? (
+        {viewMode === 'list' ? (
           <EventList 
-            events={events}
+            events={filteredEvents}
             filters={filters}
-            onFilterChange={setFilters}
+            onFilterChange={handleFilterChange}
+            showFilters={showFilters}
           />
         ) : (
-          <Card>
-            <CardContent className="p-6 text-center text-gray-600">
-              No events found. Create your first event to get started.
-            </CardContent>
-          </Card>
+          <EventCalendar events={filteredEvents} />
         )}
       </div>
     </div>

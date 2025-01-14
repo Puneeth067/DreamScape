@@ -24,18 +24,29 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
               <Link 
-                href="/signup" 
+                href="/signup" // This route exists so it should work
                 className="inline-flex items-center justify-center bg-violet-100 text-violet-900 px-8 py-4 rounded-lg font-semibold hover:bg-white transition-all shadow-lg hover:shadow-xl group"
               >
                 Start Now
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
+              {/* Option 1: Change to an existing page */}
               <Link 
-                href="/demo" 
+                href="/events" // Or another existing route
+                className="inline-flex items-center justify-center bg-violet-800/30 border-2 border-violet-200/20 text-violet-100 px-8 py-4 rounded-lg font-semibold hover:bg-violet-800/40 transition-all"
+              >
+                View Events
+              </Link>
+              
+              {/* Option 2: Make it a button that opens a modal */}
+              {/*
+              <button 
+                onClick={() => setShowDemoModal(true)} // You'll need to add state for this
                 className="inline-flex items-center justify-center bg-violet-800/30 border-2 border-violet-200/20 text-violet-100 px-8 py-4 rounded-lg font-semibold hover:bg-violet-800/40 transition-all"
               >
                 Watch Demo
-              </Link>
+              </button>
+              */}
             </div>
           </div>
         </div>
