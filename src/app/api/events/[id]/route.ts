@@ -1,16 +1,17 @@
-// src/app/api/events/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { Event } from '@/models/Event';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 
-// In src/app/api/events/[id]/route.ts, update the GET function:
-interface RouteParams {
-  params: { id: string };
+interface RouteContext {
+  params: Promise<{ id: string }>;
 }
 
-export async function GET(req: NextRequest, context: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  context: RouteContext
+) {
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
@@ -19,7 +20,8 @@ export async function GET(req: NextRequest, context: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = context.params.id;
+    const { id: eventId } = await context.params;
+    
     if (!eventId) {
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
     }
@@ -35,7 +37,6 @@ export async function GET(req: NextRequest, context: RouteParams) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Define the attendee interface
     interface Attendee {
       userId: {
         firstName: string;
@@ -45,7 +46,6 @@ export async function GET(req: NextRequest, context: RouteParams) {
       rsvpStatus: string;
     }
 
-    // Transform the event data to match the expected format
     const transformedEvent = {
       ...event.toObject(),
       attendees: event.attendees.map((attendee: Attendee) => ({
@@ -55,16 +55,20 @@ export async function GET(req: NextRequest, context: RouteParams) {
     };
 
     return NextResponse.json(transformedEvent);
-  } catch (error: Error | unknown) {
+  } catch (error: unknown) {
     console.error('Error fetching event:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+
+
+
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteContext
 ) {
+
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
@@ -73,8 +77,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const data = await req.json();
-    const event = await Event.findById(params.id);
+    const event = await Event.findById(id);
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -85,7 +90,7 @@ export async function PUT(
     }
 
     const updatedEvent = await Event.findByIdAndUpdate(
-      params.id,
+      id,
       { ...data, updatedAt: new Date() },
       { new: true }
     ).populate('organizer attendees');
@@ -100,8 +105,9 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteContext
 ) {
+
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
@@ -110,7 +116,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const event = await Event.findById(params.id);
+    const { id } = await params;
+    const event = await Event.findById(id);
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -120,7 +127,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    await Event.findByIdAndDelete(params.id);
+    await Event.findByIdAndDelete(id);
 
     return NextResponse.json({ message: 'Event deleted successfully' });
   } catch (error: Error | unknown) {

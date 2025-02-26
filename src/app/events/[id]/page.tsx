@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, Clock, Edit2, Trash2, Share2, UserPlus } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Trash2, Share2, UserPlus } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -336,16 +336,16 @@ const EventDetailsPage = () => {
                 <Share2 className="w-5 h-5" />
               </Button>
               {isOrganizer && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.push(`/events/${event?._id}/edit`)}
-                    title="Edit event"
-                    className="text-white hover:bg-white/20"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                  </Button>
+                // <>
+                //   <Button
+                //     variant="ghost"
+                //     size="icon"
+                //     onClick={() => router.push(`/events/${event?._id}/edit`)}
+                //     title="Edit event"
+                //     className="text-white hover:bg-white/20"
+                //   >
+                //     <Edit2 className="w-5 h-5" />
+                //   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -355,7 +355,7 @@ const EventDetailsPage = () => {
                   >
                     <Trash2 className="w-5 h-5" />
                   </Button>
-                </>
+                // </>
               )}
             </div>
           </CardHeader>

@@ -6,9 +6,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import mongoose from 'mongoose';
 
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
+
+
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
     await connectDB();
@@ -18,8 +23,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id: eventId } = await context.params;
     const { status } = await req.json();
-    
+
     // Validate status
     if (!['attending', 'maybe', 'declined'].includes(status)) {
       return NextResponse.json(
@@ -28,7 +34,7 @@ export async function POST(
       );
     }
 
-    const event = await Event.findById(params.id);
+    const event = await Event.findById(eventId);
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -59,14 +65,15 @@ export async function POST(
     await event.save();
 
     // Fetch updated event with populated fields
-    const updatedEvent = await Event.findById(params.id)
+    const updatedEvent = await Event.findById(eventId)
       .populate('organizer', 'firstName email')
       .populate('attendees.userId', 'firstName email');
 
     return NextResponse.json(updatedEvent);
-  } catch (error: Error | unknown) {
+  } catch (error: unknown) {
     console.error('Error updating RSVP:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+

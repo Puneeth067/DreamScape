@@ -5,9 +5,13 @@ import { Event } from '@/models/Event';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
+
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteContext
 ) {
   try {
     await connectDB();
@@ -27,7 +31,8 @@ export async function PUT(
       );
     }
 
-    const event = await Event.findById(params.id);
+    const { id } = await params;
+    const event = await Event.findById(id);
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });

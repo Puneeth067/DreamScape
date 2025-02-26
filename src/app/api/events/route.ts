@@ -5,6 +5,13 @@ import { Event } from '@/models/Event';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 
+import mongoose from 'mongoose';
+
+// Function to validate and convert to ObjectId
+function toObjectId(id: string) {
+  return mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id;
+}
+
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -18,9 +25,10 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
     const organizerId = searchParams.get('organizerId');
 
-    const query: { status?: string; organizer?: string } = {};
+    const query: { status?: string; organizer?: mongoose.Types.ObjectId | string } = {};
+
     if (status) query.status = status;
-    if (organizerId) query.organizer = organizerId;
+    if (organizerId) query.organizer = toObjectId(organizerId); // ✅ Convert if valid
 
     const events = await Event.find(query)
       .populate('organizer', 'firstName email')
@@ -30,12 +38,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(events);
   } catch (error: unknown) {
     console.error('Error fetching events:', error);
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'An unknown error occurred' }, { status: 500 });
   }
 }
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,9 +61,9 @@ export async function POST(req: NextRequest) {
       datetime: new Date(datetime),
       location,
       eventType,
-      organizer: session.user.id,
+      organizer: toObjectId(session.user.id), // ✅ Convert if valid
       attendees: [{
-        userId: session.user.id,
+        userId: toObjectId(session.user.id), // ✅ Convert if valid
         rsvpStatus: 'attending'
       }],
       status: 'published'
@@ -71,10 +77,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(populatedEvent, { status: 201 });
   } catch (error: unknown) {
-    console.error('Error fetching events:', error);
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
+    console.error('Error creating event:', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'An unknown error occurred' }, { status: 500 });
   }
 }
