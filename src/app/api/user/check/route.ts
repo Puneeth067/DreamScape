@@ -18,9 +18,10 @@ export async function GET(request: Request) {
     const user = await User.findOne({ email });
 
     return NextResponse.json({ exists: !!user });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
-      { message: 'Internal server error', error: error.message },
+      { message: 'Internal server error', error: errorMessage },
       { status: 500 }
     );
   }

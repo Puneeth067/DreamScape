@@ -21,19 +21,6 @@ export const Navbar = () => {
                 Dreamscape
               </span>
             </Link>
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/features" className="text-gray-600 hover:text-indigo-600 transition">
-                Features
-              </Link>
-              <Link href="/about" className="text-gray-600 hover:text-indigo-600 transition">
-                About
-              </Link>
-              <Link href="/contact" className="text-gray-600 hover:text-indigo-600 transition">
-                Contact
-              </Link>
-            </div>
           </div>
 
           {/* Desktop Right Buttons */}
@@ -64,16 +51,7 @@ export const Navbar = () => {
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden absolute w-full bg-white border-b border-gray-100 shadow-lg">
-          <div className="px-4 py-3 space-y-3">
-            <Link href="/features" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
-              Features
-            </Link>
-            <Link href="/about" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
-              About
-            </Link>
-            <Link href="/contact" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
-              Contact
-            </Link>
+          <div className="px-4 py-3 space-y-3">            
             <Link href="/login" className="block px-3 py-2 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">
               Sign in
             </Link>

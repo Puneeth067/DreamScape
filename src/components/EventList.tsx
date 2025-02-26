@@ -102,6 +102,7 @@ const EventList: React.FC<EventListProps> = ({ events, filters, onFilterChange, 
             <div className="flex flex-wrap gap-4 items-center">
               <select 
                 className="px-3 py-2 border rounded-lg bg-white min-w-[150px]"
+                title='Filter by status'
                 value={filters.status || ''}
                 onChange={(e) => onFilterChange({...filters, status: e.target.value})}
               >
@@ -112,6 +113,7 @@ const EventList: React.FC<EventListProps> = ({ events, filters, onFilterChange, 
               
               <select
                 className="px-3 py-2 border rounded-lg bg-white min-w-[150px]"
+                title='Filter by event type'
                 value={filters.type || ''}
                 onChange={(e) => onFilterChange({...filters, type: e.target.value})}
               >

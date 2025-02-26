@@ -6,7 +6,7 @@ import { Calendar, List, Plus, Filter } from 'lucide-react';
 import Link from 'next/link';
 import EventList from '@/components/EventList';
 import { useToast } from "@/hooks/use-toast";
-import { getEventStatus, updateEventStatus } from '@/utils/eventStatus';
+import { updateEventStatus } from '@/utils/eventStatus';
 import EventCalendar from '@/components/EventCalendar';
 
 interface RawEvent {
@@ -172,6 +172,7 @@ const EventsPage = () => {
             <div className="flex items-center space-x-2 mb-4 sm:mb-0">
               <button
                 onClick={() => setViewMode('list')}
+                title='List View'
                 className={`p-2 rounded-lg ${
                   viewMode === 'list' ? 'bg-violet-100 text-violet-600' : 'text-gray-600'
                 }`}
@@ -180,6 +181,7 @@ const EventsPage = () => {
               </button>
               <button
                 onClick={() => setViewMode('calendar')}
+                title='Calendar View'
                 className={`p-2 rounded-lg ${
                   viewMode === 'calendar' ? 'bg-violet-100 text-violet-600' : 'text-gray-600'
                 }`}

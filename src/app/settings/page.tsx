@@ -1,7 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ interface UserSettings {
 
 const SettingsPage = () => {
   const { data: session } = useSession();
-  const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -79,9 +77,9 @@ const SettingsPage = () => {
     if (session?.user) {
       fetchSettings();
     }
-  }, [session]);
+  }, [session, toast]);
 
-  const handleSettingChange = (category: keyof UserSettings, setting: string, value: any) => {
+  const handleSettingChange = (category: keyof UserSettings, setting: string, value: boolean | string) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -252,6 +250,7 @@ const SettingsPage = () => {
                     <label className="text-sm font-medium">Theme</label>
                     <select
                       className="w-full px-3 py-2 border rounded-lg"
+                      title='Theme'
                       value={settings.preferences.theme}
                       onChange={(e) => 
                         handleSettingChange('preferences', 'theme', e.target.value)
@@ -266,6 +265,7 @@ const SettingsPage = () => {
                     <label className="text-sm font-medium">Language</label>
                     <select
                       className="w-full px-3 py-2 border rounded-lg"
+                      title='Language'
                       value={settings.preferences.language}
                       onChange={(e) => 
                         handleSettingChange('preferences', 'language', e.target.value)
@@ -280,6 +280,7 @@ const SettingsPage = () => {
                     <label className="text-sm font-medium">Timezone</label>
                     <select
                       className="w-full px-3 py-2 border rounded-lg"
+                      title='Timezone'
                       value={settings.preferences.timezone}
                       onChange={(e) => 
                         handleSettingChange('preferences', 'timezone', e.target.value)

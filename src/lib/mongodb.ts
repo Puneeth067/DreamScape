@@ -48,9 +48,10 @@ export async function connectDB() {
       }
 
       cached.promise = mongoose.connect(MONGODB_URI, opts);
-    } catch (error: any) {
-      console.error('MongoDB URI validation error:', error.message);
-      throw new Error(`MongoDB URI validation failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('MongoDB URI validation error:', errorMessage);
+      throw new Error(`MongoDB URI validation failed: ${errorMessage}`);
     }
   }
 
@@ -77,22 +78,27 @@ export async function connectDB() {
     });
 
     return cached.conn;
-  } catch (error: any) {
+  } catch (error: unknown) {
     cached.promise = null;
     
     // Provide specific error messages based on error type
     let errorMessage = 'MongoDB connection failed: ';
     
-    if (error.code === 'ECONNREFUSED') {
-      errorMessage += 'Connection refused. Please check if MongoDB is running and accessible.';
-    } else if (error.name === 'MongoServerSelectionError') {
-      errorMessage += 'Could not connect to any servers in your MongoDB cluster. Check your connection string and network connectivity.';
-    } else if (error.name === 'MongoParseError') {
-      errorMessage += 'Invalid connection string format.';
-    } else if (error.name === 'MongooseServerSelectionError') {
-      errorMessage += `Server selection timed out after ${opts.serverSelectionTimeoutMS}ms. Check if your MongoDB server is running and accessible.`;
+    if (typeof error === 'object' && error !== null) {
+      const err = error as { code?: string; name?: string; message?: string };
+      if (err.code === 'ECONNREFUSED') {
+        errorMessage += 'Connection refused. Please check if MongoDB is running and accessible.';
+      } else if (err.name === 'MongoServerSelectionError') {
+        errorMessage += 'Could not connect to any servers in your MongoDB cluster. Check your connection string and network connectivity.';
+      } else if (err.name === 'MongoParseError') {
+        errorMessage += 'Invalid connection string format.';
+      } else if (err.name === 'MongooseServerSelectionError') {
+        errorMessage += `Server selection timed out after ${opts.serverSelectionTimeoutMS}ms. Check if your MongoDB server is running and accessible.`;
+      } else {
+        errorMessage += err.message || String(error);
+      }
     } else {
-      errorMessage += error.message;
+      errorMessage += String(error);
     }
 
     console.error(errorMessage);

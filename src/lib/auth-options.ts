@@ -50,7 +50,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
             image: user.image || undefined
           };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Authorization error:', error);
           throw error;
         }
@@ -62,7 +62,7 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === 'google') {
         try {
           await connectDB();
@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;

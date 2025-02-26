@@ -60,12 +60,14 @@ export async function POST(request: Request) {
 
     try {
       await user.validate();
-    } catch (validationError: any) {
+    } catch (validationError: unknown) {
       console.log('Mongoose validation error:', validationError);
+      
+      const error = validationError as Error & { errors?: Record<string, { message: string }> };
       return NextResponse.json(
         { 
           message: 'Validation error',
-          errors: Object.values(validationError.errors).map((err: any) => err.message)
+          errors: error.errors ? Object.values(error.errors).map(err => err.message) : [error.message]
         },
         { status: 400 }
       );
@@ -78,12 +80,13 @@ export async function POST(request: Request) {
       { status: 201 }
     );
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Signup error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { 
         message: 'Internal server error',
-        error: error.message
+        error: errorMessage
       },
       { status: 500 }
     );

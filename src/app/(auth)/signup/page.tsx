@@ -63,8 +63,8 @@ export default function SignUp() {
       } else {
         router.push('/dashboard');
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }

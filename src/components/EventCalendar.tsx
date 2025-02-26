@@ -3,11 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   ChevronLeft, 
   ChevronRight, 
-  Calendar as CalendarIcon, 
   MapPin, 
   Clock, 
-  Users,
-  Info
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -39,7 +37,6 @@ const EventCalendar = ({ events }: EventCalendarProps) => {
   const [hoveredEvent, setHoveredEvent] = useState<Event | null>(null);
   
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const today = new Date();
   
   const startingDayOfWeek = firstDayOfMonth.getDay();
@@ -171,7 +168,7 @@ const EventCalendar = ({ events }: EventCalendarProps) => {
                             <TooltipTrigger asChild>
                               <Link
                                 href={`/events/${event.id}`}
-                                className={`block transition-all ${getEventColor(event.eventType)} 
+                                className={`block transition-all ${getEventColor(event.eventType, hoveredEvent?.id === event.id)} 
                                   rounded border p-1 text-xs hover:shadow-md`}
                                 onMouseEnter={() => setHoveredEvent(event)}
                                 onMouseLeave={() => setHoveredEvent(null)}

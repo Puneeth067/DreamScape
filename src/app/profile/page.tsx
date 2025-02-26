@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, Link as LinkIcon, Briefcase, MapPin } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import Image from 'next/image';
 
 interface UserProfile {
   name: string;
@@ -71,19 +72,23 @@ const ProfilePage = () => {
     if (session?.user) {
       fetchProfile();
     }
-  }, [session]);
+  }, [session, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setProfile(prev => ({
-        ...prev,
-        [parent]: {
-          ...(typeof prev[parent as keyof UserProfile] === 'object' && prev[parent as keyof UserProfile] !== null ? prev[parent as keyof UserProfile] : {}),
-          [child]: value,
-        },
-      }));
+      setProfile(prev => {
+        const parentValue = prev[parent as keyof UserProfile];
+        const updatedParentValue = typeof parentValue === 'object' && parentValue !== null 
+          ? { ...parentValue as object, [child]: value }
+          : { [child]: value };
+          
+        return {
+          ...prev,
+          [parent]: updatedParentValue,
+        };
+      });
     } else {
       setProfile(prev => ({
         ...prev,
@@ -159,7 +164,7 @@ const ProfilePage = () => {
                 <div className="relative">
                   <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100">
                     {imagePreview ? (
-                      <img
+                      <Image
                         src={imagePreview}
                         alt="Profile"
                         className="w-full h-full object-cover"
@@ -181,6 +186,7 @@ const ProfilePage = () => {
                     type="file"
                     accept="image/*"
                     className="hidden"
+                    title='Profile Picture'
                     onChange={handleImageChange}
                   />
                 </div>

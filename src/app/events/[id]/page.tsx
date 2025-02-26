@@ -55,7 +55,30 @@ const EventDetailsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const transformEventData = (rawEvent: any): EventDetails => {
+    interface RawEventData {
+      _id: string;
+      title: string;
+      description: string;
+      datetime: string;
+      location: string;
+      eventType: 'conference' | 'workshop' | 'meeting' | 'social';
+      organizer: {
+        _id: string;
+        firstName: string;
+        email: string;
+      };
+      attendees: Array<{
+        userId: {
+          _id: string;
+          firstName: string;
+          email: string;
+        };
+        rsvpStatus: 'attending' | 'maybe' | 'declined';
+      }>;
+      status: string;
+    }
+
+    const transformEventData = (rawEvent: RawEventData): EventDetails => {
       const statusMap: { [key: string]: EventDetails['status'] } = {
         'draft': 'upcoming',
         'published': 'upcoming',
@@ -241,6 +264,7 @@ const EventDetailsPage = () => {
         url: window.location.href,
       });
     } catch (error) {
+      console.error('Error sharing event:', error);
       // If Web Share API is not supported, copy link to clipboard
       navigator.clipboard.writeText(window.location.href);
       toast({
@@ -388,7 +412,7 @@ const EventDetailsPage = () => {
                   disabled={isSubmitting}
                   className={userRsvpStatus === 'declined' ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600' : ''}
                 >
-                  Can't Attend
+                  Can&apos;t Attend
                 </Button>
               </div>
             )}

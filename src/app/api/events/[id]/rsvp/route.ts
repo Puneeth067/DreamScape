@@ -36,7 +36,7 @@ export async function POST(
 
     // Check if user is already an attendee
     const existingAttendeeIndex = event.attendees.findIndex(
-      (attendee: any) => attendee.userId.toString() === session.user.id
+      (attendee: { userId: mongoose.Types.ObjectId }) => attendee.userId.toString() === session.user.id
     );
 
     if (existingAttendeeIndex !== -1) {
@@ -64,8 +64,9 @@ export async function POST(
       .populate('attendees.userId', 'firstName email');
 
     return NextResponse.json(updatedEvent);
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Error updating RSVP:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -6,11 +6,11 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 
 // In src/app/api/events/[id]/route.ts, update the GET function:
+interface RouteParams {
+  params: { id: string };
+}
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest, context: RouteParams) {
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = params.id;
+    const eventId = context.params.id;
     if (!eventId) {
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
     }
@@ -35,19 +35,30 @@ export async function GET(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
+    // Define the attendee interface
+    interface Attendee {
+      userId: {
+        firstName: string;
+        email: string;
+        _id: string;
+      };
+      rsvpStatus: string;
+    }
+
     // Transform the event data to match the expected format
     const transformedEvent = {
       ...event.toObject(),
-      attendees: event.attendees.map((attendee: any) => ({
+      attendees: event.attendees.map((attendee: Attendee) => ({
         userId: attendee.userId,
         rsvpStatus: attendee.rsvpStatus
       }))
     };
 
     return NextResponse.json(transformedEvent);
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Error fetching event:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 export async function PUT(
@@ -80,9 +91,10 @@ export async function PUT(
     ).populate('organizer attendees');
 
     return NextResponse.json(updatedEvent);
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Error updating event:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -111,8 +123,9 @@ export async function DELETE(
     await Event.findByIdAndDelete(params.id);
 
     return NextResponse.json({ message: 'Event deleted successfully' });
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Error deleting event:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

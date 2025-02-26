@@ -28,9 +28,12 @@ export async function GET(req: NextRequest) {
       .sort({ datetime: -1 });
 
     return NextResponse.json(events);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching events:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 });
   }
 }
 

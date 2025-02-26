@@ -19,10 +19,16 @@ interface GoogleUser {
   provider?: string;
 }
 
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
 interface CompleteProfileDialogProps {
   isOpen: boolean;
   googleUser: GoogleUser;
-  onProfileComplete: (data: any) => void;
+  onProfileComplete: (data: ProfileData) => void;
 }
 
 interface FormData {
@@ -114,8 +120,9 @@ const CompleteProfileDialog: React.FC<CompleteProfileDialogProps> = ({
         className: 'bg-green-100 border-green-300 text-white-700'
       });
 
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while creating your profile');
+    } catch (err: Error | unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating your profile';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -199,6 +206,7 @@ const CompleteProfileDialog: React.FC<CompleteProfileDialogProps> = ({
             <select
               id="role"
               value={formData.role}
+              title='Select a role'
               onChange={(e) => setFormData(prev => ({
                 ...prev,
                 role: e.target.value

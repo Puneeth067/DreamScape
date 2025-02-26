@@ -1,6 +1,7 @@
  // src/utils/eventStatus.ts
 
 export interface EventTime {
+  _id?: string;
   datetime: string;
   status: 'draft' | 'published' | 'cancelled' | 'completed';
 }

@@ -68,8 +68,8 @@ userSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
-  } catch (error: any) {
-    next(error);
+  } catch (error: unknown) {
+    next(error instanceof Error ? error : new Error(String(error)));
   }
 });
 
@@ -77,8 +77,8 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   if (!this.password) return false;
   try {
     return await bcrypt.compare(candidatePassword, this.password);
-  } catch (error) {
-    throw new Error('Password comparison failed');
+  } catch (error: unknown) {
+    throw new Error(`Password comparison failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 

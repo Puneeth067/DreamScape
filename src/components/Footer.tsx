@@ -4,12 +4,6 @@ import { Github } from 'lucide-react';
 import DreamscapeIcon from './DreamscapeIcon';
 
 export const Footer = () => {
-  const links = [
-    { name: 'Features', href: '/features' },
-    { name: 'About Us', href: '/about' },
-    { name: 'Contact', href: '/contact' },
-    { name: 'Support', href: '/support' },
-  ];
 
   return (
     <footer className="bg-gray-50 border-t border-gray-100">
@@ -33,20 +27,6 @@ export const Footer = () => {
                 <Github className="h-5 w-5" />
               </a>
             </div>
-          </div>
-
-          {/* Quick Links */}
-          <div className="lg:col-span-2">
-            <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
-            <ul className="grid grid-cols-2 gap-3">
-              {links.map((link) => (
-                <li key={link.name}>
-                  <Link href={link.href} className="text-gray-600 hover:text-indigo-600 transition text-sm">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
