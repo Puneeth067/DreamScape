@@ -90,7 +90,7 @@ export default function Home() {
             className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.1),transparent_50%)]" 
             aria-hidden="true"
           />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-40 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-40 relative">
             <div className="max-w-3xl">
               <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-violet-800/30 text-violet-200 text-sm font-medium mb-6 border border-violet-700/30">
                 <Sparkles className="w-4 h-4 mr-2" />
